@@ -830,22 +830,9 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	if (pdata->panel_info.dynamic_cabc_enabled)
 		pdata->panel_info.cabc_mode = CABC_UI_MODE;
 
-end:
-	if (dropbox_issue != NULL) {
-		char dropbox_entry[256];
-
-		snprintf(dropbox_entry, sizeof(dropbox_entry), "%s\ncount: %d",
-			dropbox_issue, ++dropbox_count);
-
-		pr_err("%s: display issue detected[count: %d][%s], reporting dropbox\n",
-			__func__, dropbox_count, dropbox_issue);
-		dropbox_queue_event_text(DROPBOX_DISPLAY_ISSUE,
-			dropbox_entry, strlen(dropbox_entry));
-	} else
-		dropbox_count = 0;
-
 	pr_info("%s-. Pwr_mode(0x0A) = 0x%x\n", __func__, pwr_mode);
-
+end:
+	pinfo->blank_state = MDSS_PANEL_BLANK_UNBLANK;
 	return 0;
 }
 
