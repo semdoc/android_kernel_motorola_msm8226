@@ -1036,8 +1036,21 @@ int mdss_fb_blank_sub(int blank_mode, struct fb_info *info, int op_enable)
 	case FB_BLANK_NORMAL:
 	case FB_BLANK_POWERDOWN:
 	default:
-		if (mfd->panel_power_on && mfd->mdp.off_fnc) {
-			int curr_pwr_state;
+		pr_debug("blank powerdown called. cur mode=%d, req mode=%d\n",
+			cur_power_state, req_power_state);
+		/*
+		 * If doze mode is requested when panel is already off,
+		 * then first unblank the panel before entering doze mode
+		 */
+		if ((MDSS_PANEL_POWER_DOZE == req_power_state) &&
+			mdss_fb_is_power_off(mfd) && mfd->mdp.on_fnc) {
+			pr_debug("off --> doze. switch to on first\n");
+			ret = mfd->mdp.on_fnc(mfd);
+			if (ret == 0)
+				mfd->panel_power_state = MDSS_PANEL_POWER_ON;
+		}
+		if (mdss_fb_is_power_on(mfd) && mfd->mdp.off_fnc) {
+			int bl_level_old;
 
 			mutex_lock(&mfd->update.lock);
 			mfd->update.type = NOTIFY_TYPE_SUSPEND;
