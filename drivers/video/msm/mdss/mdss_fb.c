@@ -1062,9 +1062,18 @@ int mdss_fb_blank_sub(int blank_mode, struct fb_info *info, int op_enable)
 			complete(&mfd->no_update.comp);
 
 			mfd->op_enable = false;
-			curr_pwr_state = mfd->panel_power_on;
-			mfd->panel_power_on = false;
-			mfd->bl_updated = 0;
+			mutex_lock(&mfd->bl_lock);
+			if (mfd->bl_updated)
+				bl_level_old = mfd->bl_level;
+			else
+				bl_level_old = mfd->unset_bl_level;
+			if (mdss_panel_is_power_off(req_power_state)) {
+				mdss_fb_set_backlight(mfd, 0);
+				mfd->unset_bl_level = bl_level_old;
+				mfd->bl_updated = 0;
+			}
+			mfd->panel_power_state = req_power_state;
+			mutex_unlock(&mfd->bl_lock);
 
 			ret = mfd->mdp.off_fnc(mfd);
 			if (ret)
