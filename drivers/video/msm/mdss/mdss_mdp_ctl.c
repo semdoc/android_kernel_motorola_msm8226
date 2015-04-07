@@ -1788,9 +1788,10 @@ int mdss_mdp_ctl_stop(struct mdss_mdp_ctl *ctl)
 		pr_warn("no stop func for ctl=%d\n", ctl->num);
 
 	if (sctl && sctl->stop_fnc) {
-		ret = sctl->stop_fnc(sctl);
-
-		mdss_mdp_ctl_split_display_enable(0, ctl, sctl);
+		ret = sctl->stop_fnc(sctl, power_state);
+		if (ctl->panel_data->panel_info.fbc.enabled)
+			mdss_mdp_ctl_fbc_enable(0, sctl->mixer_left,
+				&sctl->panel_data->panel_info);
 	}
 
 	if (ret) {
@@ -1800,10 +1801,12 @@ int mdss_mdp_ctl_stop(struct mdss_mdp_ctl *ctl)
 		if (sctl)
 			mdss_mdp_ctl_write(sctl, MDSS_MDP_REG_CTL_TOP, 0);
 
-		if (ctl->mixer_left) {
-			off = __mdss_mdp_ctl_get_mixer_off(ctl->mixer_left);
-			mdss_mdp_ctl_write(ctl, off, 0);
-		}
+	if (sctl)
+		mdss_mdp_ctl_split_display_enable(0, ctl, sctl);
+
+	mdss_mdp_ctl_write(ctl, MDSS_MDP_REG_CTL_TOP, 0);
+	if (sctl)
+		mdss_mdp_ctl_write(sctl, MDSS_MDP_REG_CTL_TOP, 0);
 
 		if (ctl->mixer_right) {
 			off = __mdss_mdp_ctl_get_mixer_off(ctl->mixer_right);
